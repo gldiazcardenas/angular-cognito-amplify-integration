@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { signIn, signOut, getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
+import { signInWithRedirect, signOut, getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import { BehaviorSubject } from 'rxjs';
 import { TokenService, AuthTokens } from './token.service';
 
@@ -41,7 +41,7 @@ export class AuthService {
   async login(): Promise<void> {
     try {
       // Amplify will automatically handle PKCE, state, and redirect to Cognito hosted UI
-      await signIn({ username: '' });
+      await signInWithRedirect();
     } catch (error) {
       console.error('Error during login:', error);
       throw error;
