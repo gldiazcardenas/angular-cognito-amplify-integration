@@ -8,12 +8,24 @@
   <div class="user-info">
     <div class="user-card">
       <div class="avatar">
-        {{ currentUser.name?.charAt(0) || currentUser.email.charAt(0) | uppercase }}
+        {{ (currentUser.email !== 'unknown' ? currentUser.email.charAt(0) : 'U') | uppercase }}
       </div>
       <div class="user-details">
         <h3>{{ currentUser.name || 'User' }}</h3>
-        <p class="email">{{ currentUser.email }}</p>
+        <p class="email">{{ currentUser.email === 'unknown' ? 'Email not available' : currentUser.email }}</p>
         <p class="user-id">ID: {{ currentUser.id }}</p>
+      </div>
+    </div>
+  </div>
+  } @else {
+  <div class="user-info">
+    <div class="user-card loading">
+      <div class="avatar loading-avatar">
+        <div class="loading-spinner"></div>
+      </div>
+      <div class="user-details">
+        <h3>Loading user information...</h3>
+        <p class="email">Please wait while we fetch your details</p>
       </div>
     </div>
   </div>

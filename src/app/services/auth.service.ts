@@ -19,21 +19,30 @@ export class AuthService {
   private tokenCacheExpiry: number = 0;
 
   constructor(private router: Router) {
-    this.initializeAuth();
+    // Initialize auth asynchronously without blocking constructor
+    this.initializeAuth().catch(error => {
+      console.error('Error during auth initialization:', error);
+    });
   }
 
   // Initialize authentication state
   private async initializeAuth(): Promise<void> {
     try {
+      console.log('Initializing auth...');
       if (await this.isAuthenticated()) {
+        console.log('User is authenticated, loading user data...');
         const user = await this.getCurrentUser();
         this.currentUserSubject.next(user);
         // Cache the token on initialization
         await this.updateTokenCache();
+        console.log('Auth initialization complete');
+      } else {
+        console.log('User is not authenticated');
       }
     } catch (error) {
       console.error('Error initializing auth:', error);
-      this.logout();
+      // Don't call logout here as it might cause infinite loops
+      this.currentUserSubject.next(null);
     }
   }
 
@@ -98,13 +107,43 @@ export class AuthService {
   async getCurrentUser(): Promise<User> {
     try {
       const user = await getCurrentUser();
-      console.log('Current user:', user);
+      const session = await fetchAuthSession();
       
-      return {
+      // Extract user information from ID token payload
+      let email = 'unknown';
+      let name = 'Name not available';
+      
+      if (session.tokens?.idToken) {
+        const idTokenPayload = session.tokens.idToken.payload;
+        console.log('ID Token payload:', idTokenPayload);
+        
+        // Get email from ID token payload
+        if (idTokenPayload['email'] && typeof idTokenPayload['email'] === 'string') {
+          email = idTokenPayload['email'];
+          console.log('Email from ID token:', email);
+        }
+        
+        // Get name from ID token payload
+        if (idTokenPayload['name'] && typeof idTokenPayload['name'] === 'string') {
+          name = idTokenPayload['name'];
+        } else if (idTokenPayload['given_name'] && typeof idTokenPayload['given_name'] === 'string') {
+          name = idTokenPayload['given_name'];
+        } else if (idTokenPayload['preferred_username'] && typeof idTokenPayload['preferred_username'] === 'string') {
+          name = idTokenPayload['preferred_username'];
+        }
+        console.log('Name from ID token:', name);
+      } else {
+        console.log('No ID token available in session');
+      }
+      
+      const userInfo = {
         id: user.userId,
-        email: user.signInDetails?.loginId || 'unknown',
-        name: user.username || 'Unknown User'
+        email: email,
+        name: name
       };
+      
+      console.log('Processed user info:', userInfo);
+      return userInfo;
     } catch (error) {
       console.error('Error getting current user:', error);
       throw error;
