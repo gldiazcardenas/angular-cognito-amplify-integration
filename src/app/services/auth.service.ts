@@ -7,6 +7,7 @@ export interface User {
   id: string;
   email: string;
   name?: string;
+  tokenExpiry?: number;
 }
 
 @Injectable({
@@ -15,8 +16,6 @@ export interface User {
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
-  private cachedAccessToken: string | null = null;
-  private tokenCacheExpiry: number = 0;
 
   constructor(private router: Router) {
     // Initialize auth asynchronously without blocking constructor
@@ -33,8 +32,6 @@ export class AuthService {
         console.log('User is authenticated, loading user data...');
         const user = await this.getCurrentUser();
         this.currentUserSubject.next(user);
-        // Cache the token on initialization
-        await this.updateTokenCache();
         console.log('Auth initialization complete');
       } else {
         console.log('User is not authenticated');
@@ -43,21 +40,6 @@ export class AuthService {
       console.error('Error initializing auth:', error);
       // Don't call logout here as it might cause infinite loops
       this.currentUserSubject.next(null);
-    }
-  }
-
-  // Update token cache
-  private async updateTokenCache(): Promise<void> {
-    try {
-      const session = await fetchAuthSession();
-      if (session.tokens?.accessToken) {
-        this.cachedAccessToken = session.tokens.accessToken.toString();
-        // Cache for 5 minutes
-        this.tokenCacheExpiry = Date.now() + 5 * 60 * 1000;
-      }
-    } catch (error) {
-      console.error('Error updating token cache:', error);
-      this.cachedAccessToken = null;
     }
   }
 
@@ -88,9 +70,6 @@ export class AuthService {
         throw new Error('No tokens in session');
       }
 
-      // Update token cache
-      await this.updateTokenCache();
-
       // Get user info and redirect
       const user = await this.getCurrentUser();
       this.currentUserSubject.next(user);
@@ -111,11 +90,11 @@ export class AuthService {
       
       // Extract user information from ID token payload
       let email = 'unknown';
-      let name = 'Name not available';
+      let name: string | undefined = undefined;
+      let tokenExpiry: number | undefined = undefined;
       
       if (session.tokens?.idToken) {
         const idTokenPayload = session.tokens.idToken.payload;
-        console.log('ID Token payload:', idTokenPayload);
         
         // Get email from ID token payload
         if (idTokenPayload['email'] && typeof idTokenPayload['email'] === 'string') {
@@ -132,6 +111,8 @@ export class AuthService {
           name = idTokenPayload['preferred_username'];
         }
         console.log('Name from ID token:', name);
+        tokenExpiry = session.tokens?.accessToken?.payload?.exp;
+        console.log('Token expiry from ID token:', tokenExpiry);
       } else {
         console.log('No ID token available in session');
       }
@@ -139,10 +120,10 @@ export class AuthService {
       const userInfo = {
         id: user.userId,
         email: email,
-        name: name
+        name: name,
+        tokenExpiry: tokenExpiry
       };
       
-      console.log('Processed user info:', userInfo);
       return userInfo;
     } catch (error) {
       console.error('Error getting current user:', error);
@@ -155,15 +136,11 @@ export class AuthService {
     try {
       await signOut();
       this.currentUserSubject.next(null);
-      this.cachedAccessToken = null;
-      this.tokenCacheExpiry = 0;
       this.router.navigate(['/']);
     } catch (error) {
       console.error('Error during logout:', error);
       // Force logout even if there's an error
       this.currentUserSubject.next(null);
-      this.cachedAccessToken = null;
-      this.tokenCacheExpiry = 0;
       this.router.navigate(['/']);
     }
   }
@@ -184,34 +161,23 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
-  // Get current access token for HTTP requests (synchronous for interceptor)
-  getAccessToken(): string | null {
-    // Check if cache is expired
-    if (Date.now() > this.tokenCacheExpiry) {
-      this.cachedAccessToken = null;
-    }
-    return this.cachedAccessToken;
-  }
-
-  // Get current access token for HTTP requests directly from Amplify (async version)
+  // Get current access token for HTTP requests directly from Amplify
   async getAccessTokenAsync(): Promise<string | null> {
     try {
+      // Always get fresh token from Amplify (it handles refresh automatically)
       const session = await fetchAuthSession();
       const token = session.tokens?.accessToken?.toString() || null;
-      // Update cache
-      this.cachedAccessToken = token;
-      this.tokenCacheExpiry = Date.now() + 5 * 60 * 1000;
+      
+      if (token) {
+        console.log('Got fresh access token from Amplify');
+      }
+      
       return token;
     } catch (error) {
       console.error('Error getting access token:', error);
+      this.handleAuthError(error, 'getAccessTokenAsync');
       return null;
     }
-  }
-
-  // Check if we're in the middle of an auth callback
-  isAuthCallback(): boolean {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.has('code') && urlParams.has('state');
   }
 
   // Handle authentication errors
@@ -221,15 +187,12 @@ export class AuthService {
     // Logout on critical errors
     if (error.name === 'TokenExpiredError' || 
         error.name === 'NotAuthorizedException' ||
+        error.name === 'RefreshTokenExpiredError' ||
+        error.name === 'InvalidRefreshTokenError' ||
         error.statusCode === 401) {
+      console.log('Critical auth error detected, logging out user...');
       this.logout();
     }
   }
 
-  // Check if the application is ready for authentication
-  isAppReady(): boolean {
-    return typeof window !== 'undefined' && 
-           typeof localStorage !== 'undefined' &&
-           window.location !== undefined;
-  }
 }

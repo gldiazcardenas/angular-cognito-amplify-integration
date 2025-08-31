@@ -18,7 +18,7 @@ export class App implements OnInit {
 
   async ngOnInit(): Promise<void> {
     // Check if we're returning from Cognito authentication
-    if (this.authService.isAuthCallback()) {
+    if (this.isAuthCallback()) {
       try {
         await this.authService.handleAuthCallback();
       } catch (error) {
@@ -29,5 +29,11 @@ export class App implements OnInit {
     }
 
     // Amplify handles token refresh automatically, no need for manual monitoring
+  }
+
+  // Check if we're in the middle of an auth callback
+  isAuthCallback(): boolean {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.has('code') && urlParams.has('state');
   }
 }

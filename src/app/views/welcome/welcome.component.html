@@ -11,9 +11,10 @@
         {{ (currentUser.email !== 'unknown' ? currentUser.email.charAt(0) : 'U') | uppercase }}
       </div>
       <div class="user-details">
-        <h3>{{ currentUser.name || 'User' }}</h3>
+        <h3>{{ currentUser.name || 'Name not available' }}</h3>
         <p class="email">{{ currentUser.email === 'unknown' ? 'Email not available' : currentUser.email }}</p>
         <p class="user-id">ID: {{ currentUser.id }}</p>
+        <p class="token-expiry">Token expires at: {{ formatTokenExpiry(currentUser.tokenExpiry) }}</p>
       </div>
     </div>
   </div>

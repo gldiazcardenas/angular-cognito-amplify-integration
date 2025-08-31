@@ -76,6 +76,10 @@ export class WelcomeComponent implements OnInit, OnDestroy {
     }
   }
 
+  formatTokenExpiry(expiry?: number): string {
+    return expiry ? new Date(expiry * 1000).toLocaleString() : 'N/A';
+  }
+
   async logout(): Promise<void> {
     try {
       await this.authService.logout();
