@@ -4,17 +4,17 @@ Description: 'AWS Cognito Infrastructure for Angular Authentication Demo'
 Parameters:
   UserPoolName:
     Type: String
-    Default: 'angular-cognito-demo-pool'
+    Default: 'angular-cognito-amplify-pool'
     Description: 'Name for the Cognito User Pool'
   
   AppClientName:
     Type: String
-    Default: 'angular-web-client'
+    Default: 'angular-cognito-amplify-client'
     Description: 'Name for the Cognito App Client'
   
   CognitoDomainPrefix:
     Type: String
-    Default: 'angular-cognito-demo-2024'
+    Default: 'angular-cognito-amplify-2025'
     Description: 'Prefix for the Cognito hosted UI domain (must be unique across all AWS accounts)'
     AllowedPattern: '^[a-z0-9-]{3,63}$'
     ConstraintDescription: 'Domain prefix must be 3-63 characters, lowercase letters, numbers, and hyphens only'
