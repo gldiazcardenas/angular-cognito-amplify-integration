@@ -28,9 +28,6 @@ export class App implements OnInit {
       }
     }
 
-    // Start token refresh monitoring if user is authenticated
-    if (this.authService.isAuthenticated()) {
-      this.authService.startTokenRefreshMonitoring();
-    }
+    // Amplify handles token refresh automatically, no need for manual monitoring
   }
 }

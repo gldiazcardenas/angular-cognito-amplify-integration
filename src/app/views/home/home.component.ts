@@ -22,8 +22,8 @@ export class HomeComponent {
     this.checkAuthStatus();
   }
 
-  private checkAuthStatus(): void {
-    this.isAuthenticated = this.authService.isAuthenticated();
+  private async checkAuthStatus(): Promise<void> {
+    this.isAuthenticated = await this.authService.isAuthenticated();
   }
 
   async login(): Promise<void> {
@@ -48,7 +48,7 @@ export class HomeComponent {
       this.isLoading = true;
       this.errorMessage = '';
       await this.authService.logout();
-      this.checkAuthStatus();
+      await this.checkAuthStatus();
     } catch (error) {
       console.error('Logout error:', error);
       this.errorMessage = 'Logout failed. Please try again.';

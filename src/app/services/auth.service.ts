@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { signInWithRedirect, signOut, getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import { BehaviorSubject } from 'rxjs';
-import { TokenService, AuthTokens } from './token.service';
 
 export interface User {
   id: string;
@@ -16,24 +15,40 @@ export interface User {
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
+  private cachedAccessToken: string | null = null;
+  private tokenCacheExpiry: number = 0;
 
-  constructor(
-    private router: Router,
-    private tokenService: TokenService
-  ) {
+  constructor(private router: Router) {
     this.initializeAuth();
   }
 
   // Initialize authentication state
   private async initializeAuth(): Promise<void> {
     try {
-      if (this.tokenService.isAuthenticated()) {
+      if (await this.isAuthenticated()) {
         const user = await this.getCurrentUser();
         this.currentUserSubject.next(user);
+        // Cache the token on initialization
+        await this.updateTokenCache();
       }
     } catch (error) {
       console.error('Error initializing auth:', error);
       this.logout();
+    }
+  }
+
+  // Update token cache
+  private async updateTokenCache(): Promise<void> {
+    try {
+      const session = await fetchAuthSession();
+      if (session.tokens?.accessToken) {
+        this.cachedAccessToken = session.tokens.accessToken.toString();
+        // Cache for 5 minutes
+        this.tokenCacheExpiry = Date.now() + 5 * 60 * 1000;
+      }
+    } catch (error) {
+      console.error('Error updating token cache:', error);
+      this.cachedAccessToken = null;
     }
   }
 
@@ -57,17 +72,9 @@ export class AuthService {
         throw new Error('No tokens in session');
       }
 
-      // Extract tokens from Amplify session
-      // Note: refreshToken might not be directly accessible in Amplify v6
-      const tokens: AuthTokens = {
-        accessToken: session.tokens.accessToken.toString(),
-        idToken: session.tokens.idToken?.toString() || '',
-        refreshToken: undefined, // Amplify handles refresh internally
-        expiresAt: Date.now() + ((session.tokens.accessToken.payload.exp || 0) * 1000)
-      };
+      // Update token cache
+      await this.updateTokenCache();
 
-      this.tokenService.setTokens(tokens);
-      
       // Get user info and redirect
       const user = await this.getCurrentUser();
       this.currentUserSubject.next(user);
@@ -96,49 +103,32 @@ export class AuthService {
     }
   }
 
-  // Refresh tokens using Amplify
-  async refreshTokens(): Promise<void> {
-    try {
-      // Amplify handles token refresh automatically
-      const session = await fetchAuthSession();
-      if (!session.tokens) {
-        throw new Error('No tokens in session');
-      }
-
-      const tokens: AuthTokens = {
-        accessToken: session.tokens.accessToken.toString(),
-        idToken: session.tokens.idToken?.toString() || '',
-        refreshToken: undefined, // Amplify handles refresh internally
-        expiresAt: Date.now() + ((session.tokens.accessToken.payload.exp || 0) * 1000)
-      };
-
-      this.tokenService.setTokens(tokens);
-    } catch (error) {
-      console.error('Error refreshing tokens:', error);
-      this.logout();
-      throw error;
-    }
-  }
-
   // Logout user
   async logout(): Promise<void> {
     try {
       await signOut();
-      this.tokenService.clearTokens();
       this.currentUserSubject.next(null);
+      this.cachedAccessToken = null;
+      this.tokenCacheExpiry = 0;
       this.router.navigate(['/']);
     } catch (error) {
       console.error('Error during logout:', error);
       // Force logout even if there's an error
-      this.tokenService.clearTokens();
       this.currentUserSubject.next(null);
+      this.cachedAccessToken = null;
+      this.tokenCacheExpiry = 0;
       this.router.navigate(['/']);
     }
   }
 
-  // Check if user is authenticated
-  isAuthenticated(): boolean {
-    return this.tokenService.isAuthenticated();
+  // Check if user is authenticated using Amplify session
+  async isAuthenticated(): Promise<boolean> {
+    try {
+      const session = await fetchAuthSession();
+      return session.tokens !== undefined;
+    } catch (error) {
+      return false;
+    }
   }
 
   // Get current user
@@ -146,37 +136,34 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
-  // Check if tokens need refresh
-  shouldRefreshTokens(): boolean {
-    return this.tokenService.isTokenExpired();
+  // Get current access token for HTTP requests (synchronous for interceptor)
+  getAccessToken(): string | null {
+    // Check if cache is expired
+    if (Date.now() > this.tokenCacheExpiry) {
+      this.cachedAccessToken = null;
+    }
+    return this.cachedAccessToken;
   }
 
-  // Get current access token for HTTP requests
-  getAccessToken(): string | null {
-    return this.tokenService.getAccessToken();
+  // Get current access token for HTTP requests directly from Amplify (async version)
+  async getAccessTokenAsync(): Promise<string | null> {
+    try {
+      const session = await fetchAuthSession();
+      const token = session.tokens?.accessToken?.toString() || null;
+      // Update cache
+      this.cachedAccessToken = token;
+      this.tokenCacheExpiry = Date.now() + 5 * 60 * 1000;
+      return token;
+    } catch (error) {
+      console.error('Error getting access token:', error);
+      return null;
+    }
   }
 
   // Check if we're in the middle of an auth callback
   isAuthCallback(): boolean {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.has('code') && urlParams.has('state');
-  }
-
-  // Start automatic token refresh monitoring
-  startTokenRefreshMonitoring(): void {
-    // Check tokens every 5 minutes
-    setInterval(async () => {
-      if (this.shouldRefreshTokens()) {
-        try {
-          await this.refreshTokens();
-          console.log('Tokens refreshed successfully');
-        } catch (error) {
-          console.error('Token refresh failed:', error);
-          // If refresh fails, logout the user
-          this.logout();
-        }
-      }
-    }, 5 * 60 * 1000); // 5 minutes
   }
 
   // Handle authentication errors

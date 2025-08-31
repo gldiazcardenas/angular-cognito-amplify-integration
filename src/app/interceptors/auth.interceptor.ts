@@ -8,16 +8,14 @@ export const authInterceptor: HttpInterceptorFn = (
 ) => {
   const authService = inject(AuthService);
 
-  // Add auth header if user is authenticated
-  if (authService.isAuthenticated()) {
-    const accessToken = authService.getAccessToken();
-    if (accessToken) {
-      request = request.clone({
-        setHeaders: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      });
-    }
+  // Add auth header if user is authenticated and has a cached token
+  const accessToken = authService.getAccessToken();
+  if (accessToken) {
+    request = request.clone({
+      setHeaders: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
   }
 
   return next(request);

@@ -238,8 +238,8 @@ export const environment = {
 ### AuthService Methods
 
 ```typescript
-// Check authentication status
-isAuthenticated(): boolean
+// Check authentication status (async)
+isAuthenticated(): Promise<boolean>
 
 // Get current user
 getCurrentUser(): Promise<User>
@@ -250,28 +250,17 @@ login(): Promise<void>
 // Logout
 logout(): Promise<void>
 
-// Get access token
+// Get access token (synchronous, cached)
 getAccessToken(): string | null
 
-// Refresh tokens
-refreshTokens(): Promise<void>
+// Get access token (async, fresh from Amplify)
+getAccessTokenAsync(): Promise<string | null>
+
+// Get current user value (synchronous)
+getCurrentUserValue(): User | null
 ```
 
-### TokenService Methods
-
-```typescript
-// Store tokens
-setTokens(tokens: AuthTokens): void
-
-// Get stored tokens
-getTokens(): AuthTokens | null
-
-// Check if tokens are expired
-isTokenExpired(): boolean
-
-// Clear all tokens
-clearTokens(): void
-```
+**Note:** Token management is now handled automatically by AWS Amplify. The service no longer manually stores tokens in localStorage, as Amplify handles all token operations internally with the `CognitoIdentityServiceProvider` prefix.
 
 ## 🤝 Contributing
 
