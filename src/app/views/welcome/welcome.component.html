@@ -4,7 +4,8 @@
     <p>You have successfully authenticated with AWS Cognito</p>
   </div>
   
-  <div class="user-info" *ngIf="currentUser">
+  @if (currentUser) {
+  <div class="user-info">
     <div class="user-card">
       <div class="avatar">
         {{ currentUser.name?.charAt(0) || currentUser.email.charAt(0) | uppercase }}
@@ -16,6 +17,7 @@
       </div>
     </div>
   </div>
+  }
   
   <div class="content">
     <div class="info-section">
@@ -31,9 +33,6 @@
     <div class="actions">
       <button class="logout-btn" (click)="logout()">
         Sign Out
-      </button>
-      <button class="home-btn" (click)="goHome()">
-        Back to Home
       </button>
     </div>
   </div>

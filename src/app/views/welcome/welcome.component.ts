@@ -21,6 +21,7 @@ export class WelcomeComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     try {
       this.currentUser = await this.authService.getCurrentUser();
+      console.log('Loaded user:', this.currentUser);
     } catch (error) {
       console.error('Error getting current user:', error);
       // If we can't get user info, redirect to home
@@ -35,9 +36,5 @@ export class WelcomeComponent implements OnInit {
     } catch (error) {
       console.error('Logout error:', error);
     }
-  }
-
-  goHome(): void {
-    this.router.navigate(['/home']);
   }
 }

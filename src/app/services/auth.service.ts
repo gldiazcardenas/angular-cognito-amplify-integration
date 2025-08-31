@@ -55,6 +55,13 @@ export class AuthService {
   // Redirect to Cognito hosted UI for login (Amplify handles PKCE automatically)
   async login(): Promise<void> {
     try {
+      // Check if user is already authenticated
+      if (await this.isAuthenticated()) {
+        console.log('User is already authenticated, redirecting to welcome page');
+        this.router.navigate(['/welcome']);
+        return;
+      }
+      
       // Amplify will automatically handle PKCE, state, and redirect to Cognito hosted UI
       await signInWithRedirect();
     } catch (error) {
@@ -91,6 +98,7 @@ export class AuthService {
   async getCurrentUser(): Promise<User> {
     try {
       const user = await getCurrentUser();
+      console.log('Current user:', user);
       
       return {
         id: user.userId,
@@ -125,6 +133,7 @@ export class AuthService {
   async isAuthenticated(): Promise<boolean> {
     try {
       const session = await fetchAuthSession();
+      console.log('Session:', session);
       return session.tokens !== undefined;
     } catch (error) {
       return false;
