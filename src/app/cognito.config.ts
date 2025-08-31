@@ -1,6 +1,7 @@
 import { environment } from '../environments/environment';
+import { ResourcesConfig } from '@aws-amplify/core';
 
-export const cognitoConfig = {
+export const cognitoConfig: ResourcesConfig = {
   Auth: {
     Cognito: {
       userPoolId: environment.cognito.userPoolId,
