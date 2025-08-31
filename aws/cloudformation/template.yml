@@ -217,3 +217,12 @@ Outputs:
           responseType: 'code'
         }
       };
+      
+      After deployment, enable managed login:
+      1. Go to AWS Console → Cognito → User Pools → ${CognitoUserPool}
+      2. Click on 'Managed login' in the left sidebar
+      3. Create a new style with beautiful pages
+      4. Go to 'App integration' → 'Domain'
+      5. Click 'Edit' on your Cognito domain
+      6. Change 'Branding version' from 'Classic' to 'Managed login'
+      7. Save changes
