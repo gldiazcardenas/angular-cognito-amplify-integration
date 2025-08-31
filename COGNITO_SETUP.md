@@ -24,7 +24,7 @@ This guide walks you through setting up AWS Cognito for the Angular authenticati
    - **User account recovery**: Enable if needed
 
 4. **Configure App Integration**
-   - **User pool name**: Enter a descriptive name (e.g., "angular-cognito-demo")
+   - **User pool name**: Enter a descriptive name (e.g., "angular-cognito-amplify")
    - **Initial app client**: We'll create this in the next step
    - **Hosted UI**: We'll configure this later
 

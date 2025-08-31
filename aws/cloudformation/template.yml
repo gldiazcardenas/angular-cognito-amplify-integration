@@ -80,7 +80,7 @@ Resources:
       EmailConfiguration:
         EmailSendingAccount: COGNITO_DEFAULT
       UserPoolTags:
-        Project: 'angular-cognito-demo'
+        Project: 'angular-cognito-amplify'
         Environment: !Ref AWS::StackName
 
   # Cognito User Pool Client
@@ -116,7 +116,7 @@ Resources:
   CognitoUserPoolLambdaRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${UserPoolName}-lambda-role'
+      RoleName: !Sub '${AWS::StackName}-${UserPoolName}-lambda-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:

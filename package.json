@@ -1,5 +1,5 @@
 {
-  "name": "angular-cognito-demo",
+  "name": "angular-cognito-amplify",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",

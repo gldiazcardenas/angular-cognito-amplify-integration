@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "angular-cognito-demo": {
+    "angular-cognito-amplify": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -53,10 +53,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "angular-cognito-demo:build:production"
+              "buildTarget": "angular-cognito-amplify:build:production"
             },
             "development": {
-              "buildTarget": "angular-cognito-demo:build:development"
+              "buildTarget": "angular-cognito-amplify:build:development"
             }
           },
           "defaultConfiguration": "development"

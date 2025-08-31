@@ -9,7 +9,7 @@ import { AuthService } from './services/auth.service';
   styleUrl: './app.css'
 })
 export class App implements OnInit {
-  protected readonly title = signal('angular-cognito-demo');
+  protected readonly title = signal('angular-cognito-amplify');
 
   constructor(
     private authService: AuthService,

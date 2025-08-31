@@ -3,7 +3,7 @@
 # CloudFormation deployment script for Angular Cognito Demo
 # Usage: ./deploy.sh [stack-name] [region]
 
-STACK_NAME=${1:-"angular-cognito-demo"}
+STACK_NAME=${1:-"angular-cognito-amplify"}
 REGION=${2:-"us-east-1"}
 
 echo "🚀 Deploying CloudFormation stack: $STACK_NAME in region: $REGION"
@@ -24,19 +24,19 @@ fi
 echo "📦 Creating/updating CloudFormation stack..."
 
 aws cloudformation deploy \
-    --template-file template.yml \
+    --template-file aws/cloudformation/template.yml \
     --stack-name $STACK_NAME \
     --region $REGION \
     --capabilities CAPABILITY_NAMED_IAM \
     --parameter-overrides \
-        UserPoolName="angular-cognito-demo-pool" \
-        AppClientName="angular-web-client" \
-        CognitoDomainPrefix="angular-cognito-demo" \
+        UserPoolName="angular-cognito-amplify-pool" \
+        AppClientName="angular-cognito-amplify-client" \
+        CognitoDomainPrefix="angular-auth-$(whoami)-$(date +%m%d%H%M)" \
         CallbackURLs="http://localhost:4200/,https://yourdomain.com/" \
         LogoutURLs="http://localhost:4200/,https://yourdomain.com/" \
         AllowedOAuthFlows="code" \
         AllowedOAuthScopes="openid,email,profile" \
-    --tags Project=angular-cognito-demo Environment=demo
+    --tags Project=angular-cognito-amplify Environment=demo
 
 if [ $? -eq 0 ]; then
     echo "✅ Stack deployed successfully!"
