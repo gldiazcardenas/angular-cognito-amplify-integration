@@ -1,6 +1,6 @@
-0# Angular Cognito Authentication Demo
+# Angular Cognito Authentication Demo
 
-0A complete Angular 18 application demonstrating AWS Cognito authentication with hosted UI, featuring automatic token refresh and secure route protection.
+A complete Angular 20 application demonstrating AWS Cognito authentication with hosted UI, featuring automatic token refresh and secure route protection.
 
 ## 🚀 Features
 
@@ -8,14 +8,14 @@
 - **PKCE Support** - Built-in security with Proof Key for Code Exchange
 - **Automatic Token Refresh** - Seamless user experience with background token management
 - **Route Protection** - Secure routes with authentication guards
-- **Modern Angular** - Built with Angular 18 and standalone components
+- **Modern Angular** - Built with Angular 20 and standalone components
 - **Responsive UI** - Beautiful, modern interface with gradient backgrounds
 - **TypeScript** - Full type safety throughout the application
 
 ## 📋 Prerequisites
 
 - Node.js (v18 or higher)
-- Angular CLI (v18 or higher)
+- Angular CLI (v20 or higher)
 - AWS Account with Cognito User Pool configured
 
 ## 🛠️ Installation
