@@ -1,0 +1,40 @@
+<div class="welcome-container">
+  <div class="header">
+    <h1>Welcome to Your Protected Page!</h1>
+    <p>You have successfully authenticated with AWS Cognito</p>
+  </div>
+  
+  <div class="user-info" *ngIf="currentUser">
+    <div class="user-card">
+      <div class="avatar">
+        {{ currentUser.name?.charAt(0) || currentUser.email.charAt(0) | uppercase }}
+      </div>
+      <div class="user-details">
+        <h3>{{ currentUser.name || 'User' }}</h3>
+        <p class="email">{{ currentUser.email }}</p>
+        <p class="user-id">ID: {{ currentUser.id }}</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="content">
+    <div class="info-section">
+      <h2>Authentication Details</h2>
+      <ul>
+        <li>✅ User authenticated successfully</li>
+        <li>✅ JWT tokens stored securely</li>
+        <li>✅ Route protected by AuthGuard</li>
+        <li>✅ Automatic token refresh enabled</li>
+      </ul>
+    </div>
+    
+    <div class="actions">
+      <button class="logout-btn" (click)="logout()">
+        Sign Out
+      </button>
+      <button class="home-btn" (click)="goHome()">
+        Back to Home
+      </button>
+    </div>
+  </div>
+</div>

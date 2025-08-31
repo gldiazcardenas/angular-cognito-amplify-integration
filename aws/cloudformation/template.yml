@@ -1,0 +1,219 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS Cognito Infrastructure for Angular Authentication Demo'
+
+Parameters:
+  UserPoolName:
+    Type: String
+    Default: 'angular-cognito-demo-pool'
+    Description: 'Name for the Cognito User Pool'
+  
+  AppClientName:
+    Type: String
+    Default: 'angular-web-client'
+    Description: 'Name for the Cognito App Client'
+  
+  CognitoDomainPrefix:
+    Type: String
+    Default: 'angular-cognito-demo-2024'
+    Description: 'Prefix for the Cognito hosted UI domain (must be unique across all AWS accounts)'
+    AllowedPattern: '^[a-z0-9-]{3,63}$'
+    ConstraintDescription: 'Domain prefix must be 3-63 characters, lowercase letters, numbers, and hyphens only'
+  
+  CallbackURLs:
+    Type: CommaDelimitedList
+    Default: 'http://localhost:4200/,https://yourdomain.com/'
+    Description: 'Callback URLs for OAuth flows (comma-separated)'
+  
+  LogoutURLs:
+    Type: CommaDelimitedList
+    Default: 'http://localhost:4200/,https://yourdomain.com/'
+    Description: 'Logout URLs for OAuth flows (comma-separated)'
+  
+  AllowedOAuthFlows:
+    Type: CommaDelimitedList
+    Default: 'code'
+    Description: 'Allowed OAuth flows (code, implicit)'
+  
+  AllowedOAuthScopes:
+    Type: CommaDelimitedList
+    Default: 'openid,email,profile'
+    Description: 'Allowed OAuth scopes'
+
+Resources:
+  # Cognito User Pool
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Ref UserPoolName
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          TemporaryPasswordValidityDays: 7
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: name
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+        - Name: given_name
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+        - Name: family_name
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+      MfaConfiguration: 'OFF'
+      EmailConfiguration:
+        EmailSendingAccount: COGNITO_DEFAULT
+      UserPoolTags:
+        Project: 'angular-cognito-demo'
+        Environment: !Ref AWS::StackName
+
+  # Cognito User Pool Client
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      ClientName: !Ref AppClientName
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      CallbackURLs: !Ref CallbackURLs
+      LogoutURLs: !Ref LogoutURLs
+      AllowedOAuthFlows: !Ref AllowedOAuthFlows
+      AllowedOAuthScopes: !Ref AllowedOAuthScopes
+      AllowedOAuthFlowsUserPoolClient: true
+      SupportedIdentityProviders:
+        - COGNITO
+      PreventUserExistenceErrors: ENABLED
+
+  # Cognito User Pool Domain
+  # Note: Domain names must be globally unique across all AWS accounts and regions
+  # If deployment fails with "Invalid request", try a different domain prefix
+  CognitoUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Ref CognitoDomainPrefix
+      UserPoolId: !Ref CognitoUserPool
+
+  # IAM Role for Lambda Triggers (if needed)
+  CognitoUserPoolLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${UserPoolName}-lambda-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: CognitoUserPoolAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:*
+                Resource: !GetAtt CognitoUserPool.Arn
+
+Outputs:
+  UserPoolId:
+    Description: 'Cognito User Pool ID'
+    Value: !Ref CognitoUserPool
+    Export:
+      Name: !Sub '${AWS::StackName}-UserPoolId'
+  
+  UserPoolArn:
+    Description: 'Cognito User Pool ARN'
+    Value: !GetAtt CognitoUserPool.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-UserPoolArn'
+  
+  UserPoolClientId:
+    Description: 'Cognito User Pool Client ID'
+    Value: !Ref CognitoUserPoolClient
+    Export:
+      Name: !Sub '${AWS::StackName}-UserPoolClientId'
+  
+  UserPoolDomain:
+    Description: 'Cognito User Pool Domain'
+    Value: !Sub '${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com'
+    Export:
+      Name: !Sub '${AWS::StackName}-UserPoolDomain'
+  
+  HostedUIDomain:
+    Description: 'Cognito Hosted UI Domain'
+    Value: !Sub 'https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com'
+    Export:
+      Name: !Sub '${AWS::StackName}-HostedUIDomain'
+  
+  AuthorizationEndpoint:
+    Description: 'OAuth Authorization Endpoint'
+    Value: !Sub 'https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com/oauth2/authorize'
+    Export:
+      Name: !Sub '${AWS::StackName}-AuthorizationEndpoint'
+  
+  TokenEndpoint:
+    Description: 'OAuth Token Endpoint'
+    Value: !Sub 'https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
+    Export:
+      Name: !Sub '${AWS::StackName}-TokenEndpoint'
+  
+  UserInfoEndpoint:
+    Description: 'User Info Endpoint'
+    Value: !Sub 'https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com/oauth2/userInfo'
+    Export:
+      Name: !Sub '${AWS::StackName}-UserInfoEndpoint'
+  
+  ConfigurationInstructions:
+    Description: 'Configuration instructions for Angular app'
+    Value: !Sub |
+      Update your Angular environment files with:
+      
+      Development (src/environments/environment.ts):
+      export const environment = {
+        production: false,
+        cognito: {
+          userPoolId: '${CognitoUserPool}',
+          clientId: '${CognitoUserPoolClient}',
+          oauthDomain: 'https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com',
+          redirectSignIn: 'http://localhost:4200/',
+          redirectSignOut: 'http://localhost:4200/',
+          scope: 'openid email profile',
+          responseType: 'code'
+        }
+      };
+      
+      Production (src/environments/environment.prod.ts):
+      export const environment = {
+        production: true,
+        cognito: {
+          userPoolId: '${CognitoUserPool}',
+          clientId: '${CognitoUserPoolClient}',
+          oauthDomain: 'https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com',
+          redirectSignIn: 'https://yourdomain.com/',
+          redirectSignOut: 'https://yourdomain.com/',
+          scope: 'openid email profile',
+          responseType: 'code'
+        }
+      };

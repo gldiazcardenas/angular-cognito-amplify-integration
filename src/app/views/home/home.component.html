@@ -1,0 +1,45 @@
+<div class="home-container">
+  <div class="content">
+    <h1>Welcome to Angular Cognito Demo</h1>
+    <p>This is a sample application demonstrating AWS Cognito authentication with Angular.</p>
+    
+    <!-- Error Message -->
+    @if (errorMessage) {
+      <div class="error-message">
+        <p>{{ errorMessage }}</p>
+      </div>
+    }
+    
+    <div class="auth-section">
+      @if (!isAuthenticated) {
+        <button 
+          class="login-btn" 
+          (click)="login()"
+          [disabled]="isLoading">
+          @if (!isLoading) {
+            <span>Sign In with Cognito</span>
+          } @else {
+            <span>Signing In...</span>
+          }
+        </button>
+      }
+      
+      @if (isAuthenticated) {
+        <div class="authenticated-section">
+          <p>You are already signed in!</p>
+          <button class="welcome-btn" (click)="goToWelcome()">Go to Welcome Page</button>
+          <button 
+            class="logout-btn" 
+            (click)="logout()"
+            [disabled]="isLoading">
+            @if (!isLoading) {
+              <span>Sign Out</span>
+            } @else {
+              <span>Signing Out...</span>
+            }
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</div>
