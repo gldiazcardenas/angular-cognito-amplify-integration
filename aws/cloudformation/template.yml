@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'AWS Cognito Infrastructure for Angular Authentication Demo'
+Description: 'AWS Cognito Infrastructure for Angular Authentication Demo with AWS Amplify v6'
 
 Parameters:
   UserPoolName:
@@ -186,7 +186,7 @@ Outputs:
       Name: !Sub '${AWS::StackName}-UserInfoEndpoint'
   
   ConfigurationInstructions:
-    Description: 'Configuration instructions for Angular app'
+    Description: 'Configuration instructions for Angular app with AWS Amplify v6'
     Value: !Sub |
       Update your Angular environment files with:
       
@@ -218,7 +218,13 @@ Outputs:
         }
       };
       
-      After deployment, enable managed login:
+      The application uses AWS Amplify v6 for authentication:
+      - Token management is handled automatically by Amplify
+      - PKCE flow is enabled by default
+      - Automatic token refresh is built-in
+      - HTTP interceptor automatically injects tokens
+      
+      After deployment, enable managed login (optional):
       1. Go to AWS Console → Cognito → User Pools → ${CognitoUserPool}
       2. Click on 'Managed login' in the left sidebar
       3. Create a new style with beautiful pages
@@ -226,3 +232,8 @@ Outputs:
       5. Click 'Edit' on your Cognito domain
       6. Change 'Branding version' from 'Classic' to 'Managed login'
       7. Save changes
+      
+      Test the authentication:
+      1. Run 'ng serve' to start the development server
+      2. Navigate to http://localhost:4200
+      3. Click "Sign In with Cognito" to test the authentication flow

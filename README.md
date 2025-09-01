@@ -1,16 +1,18 @@
 # Angular Cognito Authentication Demo
 
-A complete Angular 20 application demonstrating AWS Cognito authentication with hosted UI, featuring automatic token refresh and secure route protection.
+A complete Angular 20 application demonstrating AWS Cognito authentication with hosted UI, featuring automatic token refresh and secure route protection using AWS Amplify v6.
 
 ## 🚀 Features
 
 - **AWS Cognito Integration** - Secure authentication using Cognito hosted UI
+- **AWS Amplify v6** - Latest Amplify library with improved performance and security
 - **PKCE Support** - Built-in security with Proof Key for Code Exchange
 - **Automatic Token Refresh** - Seamless user experience with background token management
 - **Route Protection** - Secure routes with authentication guards
 - **Modern Angular** - Built with Angular 20 and standalone components
 - **Responsive UI** - Beautiful, modern interface with gradient backgrounds
 - **TypeScript** - Full type safety throughout the application
+- **HTTP Interceptor** - Automatic token injection for API requests
 
 ## 📋 Prerequisites
 
@@ -35,6 +37,7 @@ A complete Angular 20 application demonstrating AWS Cognito authentication with 
    - Create a Cognito User Pool in AWS Console
    - Create an App Client with hosted UI enabled
    - Configure OAuth settings and redirect URIs
+   - See detailed setup guide in `COGNITO_SETUP.md`
 
 4. **Update environment configuration**
    - Edit `src/environments/environment.ts` and `src/environments/environment.prod.ts`
@@ -80,6 +83,8 @@ export const environment = {
 
 ### AWS Cognito Setup
 
+For detailed setup instructions, see `COGNITO_SETUP.md`. Key steps include:
+
 1. **Create User Pool**
    - Go to AWS Cognito Console
    - Create a new User Pool
@@ -112,28 +117,27 @@ src/app/
 │       ├── welcome.component.html
 │       └── welcome.component.css
 ├── services/                # Business logic
-│   ├── auth.service.ts      # Authentication logic
-│   └── token.service.ts     # Token management
+│   └── auth.service.ts      # Authentication logic with Amplify v6
 ├── guards/                  # Route protection
 │   └── auth.guard.ts        # Authentication guard
 ├── interceptors/            # HTTP interceptors
-│   └── auth.interceptor.ts  # Token injection
+│   └── auth.interceptor.ts  # Token injection for API requests
 ├── environments/            # Environment configuration
 │   ├── environment.ts       # Development config
 │   └── environment.prod.ts  # Production config
-└── cognito.config.ts        # AWS Amplify configuration
+├── cognito.config.ts        # AWS Amplify v6 configuration
+└── app.config.ts           # Application configuration with Amplify setup
 ```
 
 ## 🔐 Authentication Flow
 
 1. **User Access** - User visits protected route
-2. **Auth Check** - AuthGuard checks authentication status
+2. **Auth Check** - AuthGuard checks authentication status using Amplify
 3. **Redirect** - If not authenticated, redirect to Cognito hosted UI
 4. **Login** - User authenticates via Cognito hosted UI
-5. **Callback** - Cognito redirects back with authorization code
-6. **Token Exchange** - App exchanges code for tokens
-7. **Session** - User session established, redirect to protected content
-8. **Monitoring** - Background token refresh every 5 minutes
+5. **Callback** - Amplify automatically handles OAuth callback and token exchange
+6. **Session** - User session established, redirect to protected content
+7. **Monitoring** - Amplify handles background token refresh automatically
 
 ## 🚀 Running the Application
 
@@ -156,49 +160,51 @@ ng test
 ## 🔧 Key Components
 
 ### Authentication Service (`auth.service.ts`)
-- Handles Cognito hosted UI authentication
-- Manages user sessions and tokens
-- Provides automatic token refresh
-- Handles authentication callbacks
-
-### Token Service (`token.service.ts`)
-- Secure token storage in localStorage
-- Token expiration checking
-- Token refresh coordination
-- Session state management
+- Handles Cognito hosted UI authentication using AWS Amplify v6
+- Manages user sessions and tokens through Amplify
+- Provides automatic token refresh via Amplify
+- Handles authentication callbacks and user information extraction
+- Uses BehaviorSubject for reactive user state management
 
 ### Auth Guard (`auth.guard.ts`)
 - Protects routes from unauthorized access
 - Redirects unauthenticated users to login
-- Integrates with authentication service
+- Integrates with authentication service using Amplify
 
 ### HTTP Interceptor (`auth.interceptor.ts`)
-- Automatically adds authentication headers
-- Handles token injection for API requests
-- Manages request/response flow
+- Automatically adds authentication headers to HTTP requests
+- Handles token injection using fresh tokens from Amplify
+- Manages 401 errors with automatic token refresh
+- Provides seamless API authentication experience
+
+### Amplify Configuration (`cognito.config.ts`)
+- Configures AWS Amplify v6 with Cognito settings
+- Sets up OAuth flow with PKCE support
+- Defines redirect URLs and scopes
 
 ## 🎨 UI Components
 
-### Home Page
+### Home Page (`views/home/`)
 - Landing page with login button
 - Shows authentication status
 - Provides navigation to protected content
 - Handles logout functionality
 
-### Welcome Page
+### Welcome Page (`views/welcome/`)
 - Protected content for authenticated users
-- Displays user information
+- Displays user information from ID token
 - Shows authentication details
 - Provides logout option
 
 ## 🔒 Security Features
 
 - **PKCE Support** - Prevents authorization code interception
-- **Secure Token Storage** - Tokens stored in localStorage with expiration
-- **Automatic Token Refresh** - Seamless user experience
+- **Amplify Token Management** - Secure token handling by AWS Amplify
+- **Automatic Token Refresh** - Seamless user experience via Amplify
 - **Route Protection** - Guards prevent unauthorized access
 - **HTTPS Enforcement** - Production builds require HTTPS
 - **State Parameter** - Prevents CSRF attacks
+- **HTTP Interceptor** - Automatic token injection for API security
 
 ## 🐛 Troubleshooting
 
@@ -241,26 +247,47 @@ export const environment = {
 // Check authentication status (async)
 isAuthenticated(): Promise<boolean>
 
-// Get current user
+// Get current user information
 getCurrentUser(): Promise<User>
 
-// Login (redirects to Cognito)
+// Login (redirects to Cognito hosted UI)
 login(): Promise<void>
 
-// Logout
+// Logout user
 logout(): Promise<void>
-
-// Get access token (synchronous, cached)
-getAccessToken(): string | null
-
-// Get access token (async, fresh from Amplify)
-getAccessTokenAsync(): Promise<string | null>
 
 // Get current user value (synchronous)
 getCurrentUserValue(): User | null
+
+// Get access token for HTTP requests (async, fresh from Amplify)
+getAccessTokenAsync(): Promise<string | null>
 ```
 
-**Note:** Token management is now handled automatically by AWS Amplify. The service no longer manually stores tokens in localStorage, as Amplify handles all token operations internally with the `CognitoIdentityServiceProvider` prefix.
+### User Interface
+
+```typescript
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  tokenExpiry?: number;
+}
+```
+
+**Note:** Token management is handled automatically by AWS Amplify v6. The service no longer manually stores tokens, as Amplify handles all token operations internally with enhanced security.
+
+## 📦 Dependencies
+
+### Core Dependencies
+- **Angular 20** - Modern Angular framework
+- **AWS Amplify v6** - Latest AWS Amplify library for authentication
+- **RxJS** - Reactive programming library
+
+### Key Features
+- **Standalone Components** - Modern Angular architecture
+- **TypeScript** - Full type safety
+- **HTTP Interceptors** - Automatic token injection
+- **Route Guards** - Secure route protection
 
 ## 🤝 Contributing
 
@@ -276,7 +303,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🙏 Acknowledgments
 
-- AWS Amplify team for the excellent authentication library
+- AWS Amplify team for the excellent v6 authentication library
 - Angular team for the modern framework
 - AWS Cognito for secure authentication services
 
@@ -286,6 +313,7 @@ For issues and questions:
 - Create an issue in the repository
 - Check the troubleshooting section
 - Review AWS Cognito documentation
+- See detailed setup guide in `COGNITO_SETUP.md`
 
 ---
 
