@@ -1,0 +1,64 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  AWS_REGION: us-east-1
+  STACK_NAME: angular-cognito-amplify
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run tests
+      run: npm test -- --watch=false --browsers=ChromeHeadless
+      
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+        
+    - name: Validate CloudFormation template
+      run: |
+        aws cloudformation validate-template \
+          --template-body file://aws/cloudformation/template.yml \
+          --region ${{ env.AWS_REGION }}
+          
+    - name: Make deploy script executable
+      run: chmod +x aws/cloudformation/deploy.sh
+      
+    - name: Deploy CloudFormation stack
+      run: |
+        aws/cloudformation/deploy.sh ${{ env.STACK_NAME }} ${{ env.AWS_REGION }}
+      env:
+        # Override the callback URLs for production deployment
+        CALLBACK_URLS: "https://your-production-domain.com/"
+        LOGOUT_URLS: "https://your-production-domain.com/"
+        
+    - name: Get stack outputs
+      if: success()
+      run: |
+        echo "Stack deployment completed successfully!"
+        echo "Stack outputs:"
+        aws cloudformation describe-stacks \
+          --stack-name ${{ env.STACK_NAME }} \
+          --region ${{ env.AWS_REGION }} \
+          --query 'Stacks[0].Outputs[*].[OutputKey,OutputValue]' \
+          --output table
