@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# CloudFormation deployment script for Angular Cognito Demo with AWS Amplify v6
+# CloudFormation deployment script for Angular Cognito Amplify Integration with AWS Amplify v6
 # Usage: ./deploy.sh [stack-name] [region]
 
 STACK_NAME=${1:-"angular-cognito-amplify"}
