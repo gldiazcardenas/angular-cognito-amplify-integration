@@ -34,7 +34,7 @@ aws cloudformation deploy \
     --parameter-overrides \
         UserPoolName="angular-cognito-amplify-pool" \
         AppClientName="angular-cognito-amplify-client" \
-        CognitoDomainPrefix="angular-auth-$(whoami)-$(date +%m%d%H%M)" \
+        CognitoDomainPrefix="angular-$(whoami)-$(date +%m%d%H%M)" \
         CallbackURLs="http://localhost:4200/,https://yourdomain.com/" \
         LogoutURLs="http://localhost:4200/,https://yourdomain.com/" \
         AllowedOAuthFlows="code" \

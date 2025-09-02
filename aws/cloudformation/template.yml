@@ -67,7 +67,7 @@ Resources:
         - Name: name
           AttributeDataType: String
           Mutable: true
-          Required: false
+          Required: true
         - Name: given_name
           AttributeDataType: String
           Mutable: true
@@ -106,35 +106,22 @@ Resources:
   # Cognito User Pool Domain
   # Note: Domain names must be globally unique across all AWS accounts and regions
   # If deployment fails with "Invalid request", try a different domain prefix
+  # Cannot contain the reserved word "cognito"
   CognitoUserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
     Properties:
       Domain: !Ref CognitoDomainPrefix
       UserPoolId: !Ref CognitoUserPool
+      ManagedLoginVersion: 2 # This is required for the managed login branding to work
 
-  # IAM Role for Lambda Triggers (if needed)
-  CognitoUserPoolLambdaRole:
-    Type: AWS::IAM::Role
+  # Cognito Managed Login Branding Style
+  CognitoUserPoolManagedLoginBranding:
+    Type: AWS::Cognito::ManagedLoginBranding
     Properties:
-      RoleName: !Sub '${AWS::StackName}-${UserPoolName}-lambda-role'
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      Policies:
-        - PolicyName: CognitoUserPoolAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - cognito-idp:*
-                Resource: !GetAtt CognitoUserPool.Arn
+      UserPoolId: !Ref CognitoUserPool
+      ClientId: !Ref CognitoUserPoolClient
+      UseCognitoProvidedValues: true
+     
 
 Outputs:
   UserPoolId:
@@ -142,12 +129,6 @@ Outputs:
     Value: !Ref CognitoUserPool
     Export:
       Name: !Sub '${AWS::StackName}-UserPoolId'
-  
-  UserPoolArn:
-    Description: 'Cognito User Pool ARN'
-    Value: !GetAtt CognitoUserPool.Arn
-    Export:
-      Name: !Sub '${AWS::StackName}-UserPoolArn'
   
   UserPoolClientId:
     Description: 'Cognito User Pool Client ID'
@@ -160,80 +141,3 @@ Outputs:
     Value: !Sub '${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com'
     Export:
       Name: !Sub '${AWS::StackName}-UserPoolDomain'
-  
-  HostedUIDomain:
-    Description: 'Cognito Hosted UI Domain'
-    Value: !Sub 'https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com'
-    Export:
-      Name: !Sub '${AWS::StackName}-HostedUIDomain'
-  
-  AuthorizationEndpoint:
-    Description: 'OAuth Authorization Endpoint'
-    Value: !Sub 'https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com/oauth2/authorize'
-    Export:
-      Name: !Sub '${AWS::StackName}-AuthorizationEndpoint'
-  
-  TokenEndpoint:
-    Description: 'OAuth Token Endpoint'
-    Value: !Sub 'https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
-    Export:
-      Name: !Sub '${AWS::StackName}-TokenEndpoint'
-  
-  UserInfoEndpoint:
-    Description: 'User Info Endpoint'
-    Value: !Sub 'https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com/oauth2/userInfo'
-    Export:
-      Name: !Sub '${AWS::StackName}-UserInfoEndpoint'
-  
-  ConfigurationInstructions:
-    Description: 'Configuration instructions for Angular app with AWS Amplify v6'
-    Value: !Sub |
-      Update your Angular environment files with:
-      
-      Development (src/environments/environment.ts):
-      export const environment = {
-        production: false,
-        cognito: {
-          userPoolId: '${CognitoUserPool}',
-          clientId: '${CognitoUserPoolClient}',
-          oauthDomain: 'https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com',
-          redirectSignIn: 'http://localhost:4200/',
-          redirectSignOut: 'http://localhost:4200/',
-          scope: 'openid email profile',
-          responseType: 'code'
-        }
-      };
-      
-      Production (src/environments/environment.prod.ts):
-      export const environment = {
-        production: true,
-        cognito: {
-          userPoolId: '${CognitoUserPool}',
-          clientId: '${CognitoUserPoolClient}',
-          oauthDomain: 'https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com',
-          redirectSignIn: 'https://yourdomain.com/',
-          redirectSignOut: 'https://yourdomain.com/',
-          scope: 'openid email profile',
-          responseType: 'code'
-        }
-      };
-      
-      The application uses AWS Amplify v6 for authentication:
-      - Token management is handled automatically by Amplify
-      - PKCE flow is enabled by default
-      - Automatic token refresh is built-in
-      - HTTP interceptor automatically injects tokens
-      
-      After deployment, enable managed login (optional):
-      1. Go to AWS Console → Cognito → User Pools → ${CognitoUserPool}
-      2. Click on 'Managed login' in the left sidebar
-      3. Create a new style with beautiful pages
-      4. Go to 'App integration' → 'Domain'
-      5. Click 'Edit' on your Cognito domain
-      6. Change 'Branding version' from 'Classic' to 'Managed login'
-      7. Save changes
-      
-      Test the authentication:
-      1. Run 'ng serve' to start the development server
-      2. Navigate to http://localhost:4200
-      3. Click "Sign In with Cognito" to test the authentication flow
