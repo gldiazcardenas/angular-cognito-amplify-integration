@@ -2,7 +2,7 @@ name: Deploy to AWS
 
 on:
   push:
-    branches: [ main ]
+    branches: [ unknown-fake-branch ] # <-- change this to your main branch name
 
 env:
   AWS_REGION: us-east-1
